@@ -1,0 +1,13 @@
+# Machine-local paths — never commit
+.jenga_paths
+
+# Temp files from distribute-changes.sh
+.jenga_tmp/
+
+# macOS
+.DS_Store
+
+# Environment files
+.env
+.env.*
+*.local
