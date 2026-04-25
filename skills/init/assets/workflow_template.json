@@ -9,9 +9,19 @@
     "rapports_problems": "project/rapports/problems",
     "rapports_analysis": "project/rapports/analysis",
     "queue": "project/queue",
+    "scrum_triggers": "project/queue/scrum_triggers.jsonl",
+    "developer_triggers": "project/queue/developer_triggers.jsonl",
+    "tester_triggers": "project/queue/tester_triggers.jsonl",
+    "session_handoff": "project/queue/.session_handoff.json",
     "logs": "project/logs",
     "data": "project/data",
     "configs": "project/configs"
   },
-  "agents": ["developer", "tester", "scrum_master"]
+  "agents": ["developer", "tester", "scrum_master"],
+  "pipeline": [
+    {"step": 1, "agent": "scrum_master", "phase": "planning",        "on_complete": "write planning_complete handoff → developer_triggers.jsonl"},
+    {"step": 2, "agent": "developer",    "phase": "implementation",  "on_complete": "write implementation_complete handoff → tester_triggers.jsonl"},
+    {"step": 3, "agent": "tester",       "phase": "verification",    "on_complete": "write test status handoff → scrum_triggers.jsonl (+ developer_triggers.jsonl if failed)"},
+    {"step": 4, "agent": "scrum_master", "phase": "rollup_review",   "on_complete": "update board statuses, close epic/story if all done"}
+  ]
 }

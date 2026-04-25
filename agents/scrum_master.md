@@ -133,6 +133,23 @@ Once an item is sufficiently defined:
   - `/redo` — scrap and restart an item
 - Update `PROJECT_SUMMARY.md` if the item introduces or changes something meaningful about the project
 
+#### Triggering the Developer
+When board items are committed **and the user intends them for immediate implementation**, write a session handoff file to `project/queue/.session_handoff.json` so that `on_session_end.sh` forwards the work to the developer queue:
+
+```json
+{
+  "agent": "scrum_master",
+  "session_id": "<current session id>",
+  "status": "planning_complete",
+  "task_ids": ["<E##_S##_T##>", "..."],
+  "story_id": "<E##_S##>",
+  "epic_id": "<E##>",
+  "date": "<ISO 8601 UTC timestamp>"
+}
+```
+
+If the user wants to defer implementation (e.g., brainstorming only, or items are backlogged for later), do **not** write the handoff file.
+
 ### 4. Definition of Done
 - Every **epic** and every **story** must have a DoD
 - When an epic or story is amended, review the DoD and revise it if necessary

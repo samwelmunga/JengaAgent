@@ -87,6 +87,21 @@ Skills without this property are executed directly without delegating to a sub-a
 
 ---
 
+## Interaction Pattern
+
+When presenting options to the user, ALWAYS use this format instead of open-ended questions if possible:
+
+    What would you like to do?
+    1. Option A
+    2. Option B  
+    3. Option C
+    4. Other (describe below)
+
+Avoid ask open-ended questions where a list of options would serve better.
+Free-text input must always appear as the final numbered option.
+
+---
+
 ## MCP Tools
 
 ### `mcp/help`

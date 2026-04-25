@@ -18,7 +18,10 @@ project/
     baselines.json  Analytics baselines (owned by tester)
   queue/
     scrum_triggers.jsonl         Trigger queue for scrum master
+    developer_triggers.jsonl     Trigger queue for developer agent
+    tester_triggers.jsonl        Trigger queue for tester agent
     project_summary_updates.jsonl Proposed PROJECT_SUMMARY.md edits
+    .session_handoff.json        Transient inter-session handoff (written by agent, consumed by on_session_end.sh)
   rapports/
     problems/       Problem rapports from developer and tester
     analysis/       Analysis rapports from tester
@@ -175,7 +178,53 @@ Before writing to any board file, agents must:
 
 ---
 
-## workflow.json — Shared Constants
+## Queue Trigger Types
+
+### `scrum_triggers.jsonl` — processed by scrum master at session start
+
+| Type             | Written by  | Purpose                                                |
+|------------------|-------------|--------------------------------------------------------|
+| `rapport_review` | on_session_end.sh | New problem rapport(s) detected; create backlog items or mark Failed |
+| `status_review`  | on_session_end.sh | Session ended; review board for stale statuses        |
+| `story_rollup`   | tester / on_session_end.sh | All tasks under story complete; check rollup |
+
+### `developer_triggers.jsonl` — processed by developer at session start
+
+| Type                     | Written by          | Purpose                                       |
+|--------------------------|---------------------|-----------------------------------------------|
+| `implementation_assignment` | on_session_end.sh (from scrum_master handoff) | New tasks ready for implementation |
+| `rework_assignment`      | on_session_end.sh (from tester handoff) | Tests failed; address rapport and re-implement |
+
+### `tester_triggers.jsonl` — processed by tester at session start
+
+| Type              | Written by          | Purpose                                         |
+|-------------------|---------------------|-------------------------------------------------|
+| `test_assignment` | on_session_end.sh (from developer handoff) | Implementation complete; run tests against worktree |
+
+### `.session_handoff.json` — transient, consumed by on_session_end.sh
+
+Written by an agent as the **last action** of its session. Consumed and deleted by `on_session_end.sh`. The file must not persist across sessions.
+
+| Field         | Required by          | Notes                                    |
+|---------------|----------------------|------------------------------------------|
+| `agent`       | all                  | `scrum_master`, `developer`, or `tester` |
+| `status`      | all                  | See per-agent values below               |
+| `session_id`  | all                  |                                          |
+| `task_ids`    | scrum_master only    | Array of task IDs assigned for implementation |
+| `task_id`     | developer, tester    | Single task ID                           |
+| `story_id`    | all                  |                                          |
+| `epic_id`     | all                  |                                          |
+| `worktree`    | developer, tester    | Absolute path                            |
+| `paths`       | developer, tester    | Commit SHAs                              |
+| `rapport_file`| tester only          | Path to rapport if status is failed/error |
+| `date`        | all                  | ISO 8601 UTC                             |
+
+**Status values per agent:**
+- `scrum_master`: `planning_complete`
+- `developer`: `implementation_complete`
+- `tester`: `passed`, `passed_with_remarks`, `failed`, `error`
+
+
 
 Located at `project/configs/workflow.json`. Scaffolded by `/init` and owned by the scrum master.
 

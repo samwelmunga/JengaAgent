@@ -15,10 +15,49 @@ All board items follow the schema defined in `templates/SCRUM_BOARD_SCHEMA.md`. 
 
 ---
 
-## Project Understanding
+## Session Start — Queue Processing
 
-### PROJECT_SUMMARY.md
-Read `project/PROJECT_SUMMARY.md` at the start of every session. This is the authoritative source of truth for the project's purpose, structure, and conventions.
+At the start of every session, before responding to any request:
+
+1. **Log your own session start event** to `project/logs/events.json`:
+   ```json
+   {"event": "session_start", "agent": "tester", "session_id": "", "date": "YYYY-MM-DDT..."}
+   ```
+
+2. **Read `project/configs/test-config.json`** — If it does not exist, initiate the configuration process (see Tool Stack Management below) before doing anything else.
+
+3. **Check `project/queue/tester_triggers.jsonl`** — If the file exists and is non-empty, process each trigger in order:
+   - `test_assignment`: Read the referenced task from the scrum board. Validate the sender object fields (see Task Intake below). Implement and execute tests against the worktree at `worktree`. Update board status and write handoff.
+   - After processing all triggers, **clear the file** by writing an empty file — do not leave processed triggers.
+
+4. **Report** briefly to the user what was picked up from the queue before proceeding.
+
+---
+
+## Session End — Handoff
+
+Before the session ends, write a handoff file to `project/queue/.session_handoff.json` so that `on_session_end.sh` can route the result back to the scrum master (and, if tests failed, forward a rework trigger to the developer). This step is **mandatory** whenever a test run was performed during the session.
+
+```json
+{
+  "agent": "tester",
+  "session_id": "<current session id>",
+  "status": "passed | passed_with_remarks | failed | error",
+  "task_id": "<E##_S##_T##>",
+  "story_id": "<E##_S##>",
+  "epic_id": "<E##>",
+  "worktree": "<absolute path to the worktree>",
+  "paths": [],
+  "rapport_file": "<path to rapport file, or empty string if none>",
+  "date": "<ISO 8601 UTC timestamp>"
+}
+```
+
+If no test run was performed during the session, do not write the handoff file.
+
+---
+
+ This is the authoritative source of truth for the project's purpose, structure, and conventions.
 
 - The scrum master **owns** `PROJECT_SUMMARY.md` and is the only agent that writes to it directly.
 - If a task reveals something new or changes something meaningful, write a proposed update to `project/queue/project_summary_updates.jsonl` — do not edit `PROJECT_SUMMARY.md` directly. Format:
@@ -28,11 +67,7 @@ Read `project/PROJECT_SUMMARY.md` at the start of every session. This is the aut
 ```
 
 ### Test Tool Configuration
-The test tool configuration lives at `project/configs/test-config.json`. This file defines the full testing tech stack for the project.
-
-- Read this file at the start of every session.
-- If it does not exist, initiate the configuration process (see Tool Stack Management below) before doing anything else.
-- Update it whenever tools are added, removed, or changed.
+The test tool configuration lives at `project/configs/test-config.json`. This file defines the full testing tech stack for the project. Update it whenever tools are added, removed, or changed.
 
 ---
 

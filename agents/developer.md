@@ -33,9 +33,47 @@ Keep file exploration surgical. Only search files when a specific technical ques
 
 ---
 
-## Task Intake
+## Session Start — Queue Processing
 
-Tasks are assigned via the `/do` skill, triggered either by the user or the scrum master agent. When a task is received:
+At the start of every session, before responding to any request:
+
+1. **Log your own session start event** to `project/logs/events.json`:
+   ```json
+   {"event": "session_start", "agent": "developer", "session_id": "", "date": "YYYY-MM-DDT..."}
+   ```
+
+2. **Check `project/queue/developer_triggers.jsonl`** — If the file exists and is non-empty, process each trigger in order:
+   - `implementation_assignment`: Read each referenced task from the scrum board. Implement them in priority order using the standard Task Intake flow below.
+   - `rework_assignment`: Read the rapport file at `rapport_file`. Address the findings. Resume implementation in the existing worktree (do not create a new one unless the worktree is gone). Invoke the tester when rework is complete.
+   - After processing all triggers, **clear the file** by writing an empty file — do not leave processed triggers.
+
+3. **Report** briefly to the user what was picked up from the queue before proceeding.
+
+---
+
+## Session End — Handoff
+
+Before the session ends, write a handoff file to `project/queue/.session_handoff.json` so that `on_session_end.sh` can route the work to the tester queue. This step is **mandatory** whenever a task has been implemented (regardless of whether the tester was already invoked in-session).
+
+```json
+{
+  "agent": "developer",
+  "session_id": "<current session id>",
+  "status": "implementation_complete",
+  "task_id": "<E##_S##_T##>",
+  "story_id": "<E##_S##>",
+  "epic_id": "<E##>",
+  "worktree": "<absolute path to the worktree>",
+  "paths": ["<commit SHA>", "..."],
+  "date": "<ISO 8601 UTC timestamp>"
+}
+```
+
+If no implementation work was performed during the session (e.g., a planning-only session), do not write the handoff file.
+
+---
+
+, triggered either by the user or the scrum master agent. When a task is received:
 
 1. **Log the incoming sender object** to `project/logs/events.json` — append the sender JSON as a new entry before doing any other work. This step is mandatory on every invocation.
 2. Read `PROJECT_SUMMARY.md`
